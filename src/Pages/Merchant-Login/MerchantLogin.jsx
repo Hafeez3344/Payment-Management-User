@@ -9,7 +9,7 @@ import { fn_loginMerchantApi } from "../../api/api";
 const { useBreakpoint } = Grid;
 const { Text, Title } = Typography;
 
-const MerchantLogin = ({ authorization, setAuthorization, setMerchantVerified, setGlobalLoginType, setPermissionsData }) => {
+const MerchantLogin = ({ authorization, setAuthorization, setMerchantVerified }) => {
   const navigate = useNavigate();
   const screens = useBreakpoint();
 
@@ -46,21 +46,8 @@ const MerchantLogin = ({ authorization, setAuthorization, setMerchantVerified, s
         });
 
         setAuthorization(true);
-        setGlobalLoginType(response?.type);
         setMerchantVerified(response?.merchantVerified);
-
-        if (response?.type === "merchant") {
-          navigate("/");
-        } else {
-          if (response?.permissions?.dashboard?.view) return navigate("/");
-          if (response?.permissions?.transactionHistory?.view) return navigate("/transactions-table");
-          if (response?.permissions?.directPayment?.view) return navigate("/direct-payment-page");
-          if (response?.permissions?.approvalPoints?.view) return navigate("/approval-points");
-          if (response?.permissions?.merchantProfile?.view) return navigate("/merchant-management");
-          if (response?.permissions?.reportsAnalytics?.view) return navigate("/reports-and-analytics");
-          if (response?.permissions?.support?.view) return navigate("/support-help-center");
-          if (response?.permissions?.uploadStatement?.view) return navigate("/upload-statement");
-        }
+        navigate("/");
       } else {
         setLoginLoader(false);
         notification.error({
@@ -140,6 +127,9 @@ const MerchantLogin = ({ authorization, setAuthorization, setMerchantVerified, s
           <Title level={2} style={styles.title}>
             User Login
           </Title>
+          <Text style={styles.text}>
+            Welcome back! Please enter your details below to log in as an user.
+          </Text>
         </div>
         <Form
           name="normal_login"

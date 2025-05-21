@@ -5,7 +5,7 @@ import Cookies from "js-cookie";
 import { MdOutlineNotificationsNone } from "react-icons/md";
 import { MdOutlineFullscreen } from "react-icons/md";
 import { FaRegUser } from "react-icons/fa6";
-import { Button, Input, Modal, notification, Dropdown } from "antd";
+import { Button, Input, Modal, notification } from "antd";
 
 const NavBar = ({ setShowSide, showSidebar }) => {
   const [open, setOpen] = React.useState(false);
@@ -20,42 +20,7 @@ const NavBar = ({ setShowSide, showSidebar }) => {
   const fn_controlSidebar = () => {
     setShowSide(!showSidebar);
   };
-  const copyLink = () => {
-    if (generatedLink === "") {
-      navigator.clipboard.writeText("https://www.royal247.org/");
-      notification.success({
-        message: "Success",
-        description: "Link copied to clipboard!",
-        placement: "topRight",
-      });
-    } else {
-      navigator.clipboard.writeText(generatedLink);
-      notification.success({
-        message: "Success",
-        description: "Link copied to clipboard!",
-        placement: "topRight",
-      });
-    }
-  };
-  const shareLink = async () => {
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: "Payment Link",
-          text: "Here is your payment link",
-          url: generatedLink,
-        });
-      } else {
-        notification.info({
-          message: "Info",
-          description: "Web Share API is not supported in your browser",
-          placement: "topRight",
-        });
-      }
-    } catch (error) {
-      console.error("Error sharing:", error);
-    }
-  };
+
   const handleCreateTransaction = async () => {
     try {
       if (!transactionData.amount) {
@@ -116,11 +81,6 @@ const NavBar = ({ setShowSide, showSidebar }) => {
           />
         </div>
         <div className="flex items-center gap-7 pr-7">
-          <Dropdown menu={{ items }} placement="bottomRight">
-            <Button className="text-white bg-[#0864E8] border min-w-[80px] sm:min-w-[100px] px-3 py-1 rounded text-nowrap">
-              Create Link
-            </Button>
-          </Dropdown>
           <div className="text-[25px] cursor-pointer">
             <RiMessageLine />
           </div>
