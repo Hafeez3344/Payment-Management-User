@@ -30,7 +30,7 @@ const SideBar = ({ merchantVerified, showSidebar, setShowSide, setAuthorization,
       <div className="flex pl-[21px] h-[55px] items-center gap-3 border-b border-secondary">
         <div>
           {/* <img className="w-[130px]" src={Royal247Logo} alt="" /> */}
-          <p className="text-[20px] font-[600] text-gray-500">Management User</p>
+          <p className="text-[19px] font-[600] text-gray-500">Payment Management User</p>
         </div>
         <button
           className="bg-gray-200 h-[25px] w-[25px] rounded-sm flex md:hidden justify-center ml-20 items-center"
