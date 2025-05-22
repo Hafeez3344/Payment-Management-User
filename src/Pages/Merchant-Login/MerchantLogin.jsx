@@ -1,15 +1,15 @@
-import Cookies from "js-cookie";
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button, Form, Grid, Input, Typography, notification } from "antd";
 import { LockOutlined, MailOutlined } from "@ant-design/icons";
 import logo from "../../assets/logo.png";
-import { fn_loginMerchantApi } from "../../api/api";
+import { fn_loginUserApi } from "../../api/api";
+import Cookies from "js-cookie";
 
 const { useBreakpoint } = Grid;
 const { Text, Title } = Typography;
 
-const MerchantLogin = ({ authorization, setAuthorization, setMerchantVerified }) => {
+const MerchantLogin = ({ authorization, setAuthorization }) => {
   const navigate = useNavigate();
   const screens = useBreakpoint();
 
@@ -37,16 +37,19 @@ const MerchantLogin = ({ authorization, setAuthorization, setMerchantVerified })
   const onFinish = async (values) => {
     try {
       setLoginLoader(true);
-      const response = await fn_loginMerchantApi(values);
+      const response = await fn_loginUserApi(values);
+      console.log("l=ogi==nn response ===> ",response);
       if (response?.status) {
+        // Store userId in cookies if available
+        if (response?.data?.data?._id) {
+          Cookies.set("userId", response.data.data._id);
+        }
         notification.success({
           message: "Login Successful",
           description: "You have successfully logged in.",
           placement: "topRight",
         });
-
         setAuthorization(true);
-        setMerchantVerified(response?.merchantVerified);
         navigate("/");
       } else {
         setLoginLoader(false);
@@ -128,7 +131,7 @@ const MerchantLogin = ({ authorization, setAuthorization, setMerchantVerified })
             User Login
           </Title>
           <Text style={styles.text}>
-            Welcome back! Please enter your details below to log in as an user.
+            Welcome back! Please enter your details below to log in as a user.
           </Text>
         </div>
         <Form

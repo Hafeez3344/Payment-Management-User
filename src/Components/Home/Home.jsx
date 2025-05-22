@@ -1,12 +1,22 @@
-import { Button, DatePicker, Space, Modal, Input, message, Form, Select } from "antd";
+import {
+  Button,
+  DatePicker,
+  Space,
+  Modal,
+  Input,
+  message,
+  Form,
+  Select,
+} from "antd";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  fn_getCardDataByStatus,
-  fn_getAllTransactionApi,
+  fn_createPaymentApi,
+  fn_getUserPaymentApi,
   fn_getAllMerchantApi,
 } from "../../api/api";
 import { FaIndianRupeeSign } from "react-icons/fa6";
+import Cookies from "js-cookie";
 
 const Home = ({ authorization, showSidebar }) => {
   const navigate = useNavigate();
@@ -33,32 +43,6 @@ const Home = ({ authorization, showSidebar }) => {
   const [createPaymentModalOpen, setCreatePaymentModalOpen] = useState(false);
   const [form] = Form.useForm();
 
-  // Define static transaction objects for the static rows
-  const staticTransactions = [
-    {
-      trnNo: "TRN1001",
-      createdAt: "2024-02-01T09:15:00",
-      bankId: {
-        accountType: "bank",
-        accountNo: "1234567890",
-        ifsc: "HDFC0001234",
-      },
-      total: 8500,
-      status: "Pending",
-    },
-    {
-      trnNo: "TRN1002",
-      createdAt: "2024-02-01T10:00:00",
-      bankId: {
-        accountType: "upi",
-        accountHolderName: "Amit Kumar",
-        iban: "amit@upi",
-      },
-      total: 4200,
-      status: "Pending",
-    },
-  ];
-
   useEffect(() => {
     window.scroll(0, 0);
     if (!authorization) {
@@ -70,28 +54,26 @@ const Home = ({ authorization, showSidebar }) => {
   const fetchAllData = async () => {
     try {
       setLoading(true);
-      const [approvedData, pendingData, declineData, totalData, merchantData] =
-        await Promise.all([
-          fn_getCardDataByStatus("Approved", activeFilter, dateRange),
-          fn_getCardDataByStatus("Pending", activeFilter, dateRange),
-          fn_getCardDataByStatus("Decline", activeFilter, dateRange),
-          fn_getAllTransactionApi(),
-          fn_getAllMerchantApi(null, 1, null, null, null, null, dateRange),
-        ]);
-      setVerifiedTransactions(approvedData?.data?.data || 0);
-      setAdminCharges(approvedData?.data?.adminTotalSum || 0);
-      setTotalTrns(approvedData?.data?.totalTransaction || 0);
-      setUnverifiedTransactions(pendingData?.data?.data || 0);
-      setDeclineTransactions(declineData?.data?.data || 0);
-      setTotalTransactions(totalData?.data?.data || 0);
-      setMerchantAvailBalance(approvedData?.data?.availableWithdraw || 0);
-      setCardData({
-        approved: approvedData?.data || {},
-        pending: pendingData?.data || {},
-        failed: declineData?.data || {},
-      });
-      if (merchantData?.status && merchantData?.data?.data) {
-        setRecentTransactions(merchantData.data.data.slice(0, 10));
+      // Use the user API to get only current user's payments
+      const response = await fn_getUserPaymentApi();
+      if (response?.status && response?.data) {
+        const payments = Array.isArray(response.data) ? response.data : response.data.data || response.data.payments || [];
+        const mapped = payments.map(payment => ({
+          ...payment,
+          bankId: {
+            accountType: payment.transactionType,
+            accountNo: payment.accountNumber,
+            bankName: payment.bankName,
+            ifsc: payment.ifsc,
+            accountHolderName: payment.accountHolder,
+            iban: payment.upi || "",
+            upi: payment.upi || ""
+          },
+          total: payment.amount,
+        }));
+        // Sort by createdAt descending (latest first)
+        mapped.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        setRecentTransactions(mapped.slice(0, 10));
       } else {
         setRecentTransactions([]);
       }
@@ -121,28 +103,25 @@ const Home = ({ authorization, showSidebar }) => {
     setActiveFilter(filterType);
     setDateRange([null, null]);
     try {
-      const [approvedData, pendingData, declineData, totalData, merchantData] =
-        await Promise.all([
-          fn_getCardDataByStatus("Approved", filterType, null),
-          fn_getCardDataByStatus("Pending", filterType, null),
-          fn_getCardDataByStatus("Decline", filterType, null),
-          fn_getAllTransactionApi(),
-          fn_getAllMerchantApi(null, 1, null, null, null, null, null),
-        ]);
-      setVerifiedTransactions(approvedData?.data?.data || 0);
-      setAdminCharges(approvedData?.data?.adminTotalSum || 0);
-      setTotalTrns(approvedData?.data?.totalTransaction || 0);
-      setUnverifiedTransactions(pendingData?.data?.data || 0);
-      setDeclineTransactions(declineData?.data?.data || 0);
-      setTotalTransactions(totalData?.data?.data || 0);
-      setMerchantAvailBalance(approvedData?.data?.availableWithdraw || 0);
-      setCardData({
-        approved: approvedData?.data || {},
-        pending: pendingData?.data || {},
-        failed: declineData?.data || {},
-      });
-      if (merchantData?.status && merchantData?.data?.data) {
-        setRecentTransactions(merchantData.data.data.slice(0, 10));
+      const response = await fn_getUserPaymentApi();
+      if (response?.status && response?.data) {
+        const payments = Array.isArray(response.data) ? response.data : response.data.data || response.data.payments || [];
+        const mapped = payments.map(payment => ({
+          ...payment,
+          bankId: {
+            accountType: payment.transactionType,
+            accountNo: payment.accountNumber,
+            bankName: payment.bankName,
+            ifsc: payment.ifsc,
+            accountHolderName: payment.accountHolder,
+            iban: payment.upi || "",
+            upi: payment.upi || ""
+          },
+          total: payment.amount,
+        }));
+        // Sort by createdAt descending (latest first)
+        mapped.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        setRecentTransactions(mapped.slice(0, 10));
       } else {
         setRecentTransactions([]);
       }
@@ -163,9 +142,31 @@ const Home = ({ authorization, showSidebar }) => {
     setCreatePaymentModalOpen(false);
     form.resetFields();
   };
-  const handleCreatePayment = (values) => {
-    message.success("Payment created (demo only)");
-    closeCreatePaymentModal();
+  const handleCreatePayment = async (values) => {
+    try {
+      setLoading(true);
+      const trnId = `TRN${Date.now()}`;
+      const userId = Cookies.get("userId");
+      const { type, ...rest } = values;
+      const response = await fn_createPaymentApi({
+        ...rest,
+        status: "Pending",
+        transactionType: type,
+        trnId,
+        userId,
+      });
+      if (response.status) {
+        message.success("Payment created successfully");
+        closeCreatePaymentModal();
+        fetchAllData();
+      } else {
+        message.error(response.message || "Failed to create payment");
+      }
+    } catch (err) {
+      message.error("Failed to create payment");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -183,25 +184,41 @@ const Home = ({ authorization, showSidebar }) => {
             <div className="flex space-x-2 text-[12px]">
               <button
                 onClick={() => handleFilterClick("all")}
-                className={`$${activeFilter === "all" ? "text-white bg-[#0864E8]" : "text-black"} border w-[70px] sm:w-[70px] p-1 rounded`}
+                className={`$${
+                  activeFilter === "all"
+                    ? "text-white bg-[#0864E8]"
+                    : "text-black"
+                } border w-[70px] sm:w-[70px] p-1 rounded`}
               >
                 ALL
               </button>
               <button
                 onClick={() => handleFilterClick("today")}
-                className={`$${activeFilter === "today" ? "text-white bg-[#0864E8]" : "text-black"} border w-[70px] sm:w-[70px] p-1 rounded`}
+                className={`$${
+                  activeFilter === "today"
+                    ? "text-white bg-[#0864E8]"
+                    : "text-black"
+                } border w-[70px] sm:w-[70px] p-1 rounded`}
               >
                 TODAY
               </button>
               <button
                 onClick={() => handleFilterClick("7days")}
-                className={`$${activeFilter === "7days" ? "text-white bg-[#0864E8]" : "text-black"} border w-[70px] sm:w-[70px] p-1 rounded`}
+                className={`$${
+                  activeFilter === "7days"
+                    ? "text-white bg-[#0864E8]"
+                    : "text-black"
+                } border w-[70px] sm:w-[70px] p-1 rounded`}
               >
                 7 DAYS
               </button>
               <button
                 onClick={() => handleFilterClick("30days")}
-                className={`$${activeFilter === "30days" ? "text-white bg-[#0864E8]" : "text-black"} border w-[70px] sm:w-[70px] p-1.5 rounded`}
+                className={`$${
+                  activeFilter === "30days"
+                    ? "text-white bg-[#0864E8]"
+                    : "text-black"
+                } border w-[70px] sm:w-[70px] p-1.5 rounded`}
               >
                 30 DAYS
               </button>
@@ -240,7 +257,7 @@ const Home = ({ authorization, showSidebar }) => {
               ₹ {Number(unverifiedTransactions).toFixed(2)}
             </p>
             <p className="pt-[3px] text-[13px] font-[500] mb-[7px]">
-              No. of Pending Transactions: {" "}
+              No. of Pending Transactions:{" "}
               <span className="font-[700]">
                 {cardData.pending.totalTransaction || 0}
               </span>
@@ -260,7 +277,7 @@ const Home = ({ authorization, showSidebar }) => {
               ₹ {Number(merchantAvailBalance).toFixed(2)}
             </p>
             <p className="pt-[3px] text-[13px] font-[500] mb-[7px]">
-              No. of Approved Transactions: {" "}
+              No. of Approved Transactions:{" "}
               <span className="font-[700]">
                 ₹ {Number(verifiedTransactions).toFixed(2) || 0}
               </span>
@@ -281,7 +298,7 @@ const Home = ({ authorization, showSidebar }) => {
               ₹ {Number(declineTransactions).toFixed(2)}
             </p>
             <p className="pt-[3px] text-[13px] font-[500] mb-[7px]">
-              No. of Rejected Transactions: {" "}
+              No. of Rejected Transactions:{" "}
               <span className="font-[700]">
                 {cardData.failed.totalTransaction || 0}
               </span>
@@ -299,7 +316,7 @@ const Home = ({ authorization, showSidebar }) => {
               ₹ {Number(adminCharges).toFixed(2)}
             </p>
             <p className="pt-[3px] text-[13px] font-[500] mb-[7px]">
-              No. of Processing Transactions: {" "}
+              No. of Processing Transactions:{" "}
               <span className="font-[700]">{totalTrns}</span>
             </p>
           </div>
@@ -327,56 +344,16 @@ const Home = ({ authorization, showSidebar }) => {
               <thead>
                 <tr className="bg-[#ECF0FA] text-left text-[12px] text-gray-700">
                   <th className="p-4 text-nowrap">TRN-ID</th>
-                  <th className="p-4">DATE</th>
-                  <th className="p-4 text-nowrap">ACCOUNT NAME</th>
+                  <th className="p-4">Date</th>
+                  <th className="p-4 text-nowrap">Account Holder Name</th>
+                  <th className="p-4 text-nowrap">Bank Name</th>
+                  <th className="p-4 text-nowrap">Account Number</th>
                   <th className="p-4 text-nowrap">{`IFSC / UPI`}</th>
-                  <th className="p-4 text-nowrap">AMOUNT</th>
-                  <th className="p-4 text- pl-16">STATUS</th>
+                  <th className="p-4 text-nowrap">Amount</th>
+                  <th className="p-4 text- pl-16">Status</th>
                 </tr>
               </thead>
               <tbody>
-                {/* Static Data Example Rows */}
-                {staticTransactions.map((trx, idx) => (
-                  <tr className="text-gray-800 text-sm border-b" key={trx.trnNo}>
-                    <td className="p-4 text-[13px] font-[600] text-[#000000B2]">
-                      {trx.trnNo}
-                    </td>
-                    <td className="p-4 text-[13px] font-[600] text-[#000000B2] whitespace-nowrap">
-                      {new Date(trx.createdAt).toLocaleString()}
-                    </td>
-                    <td className="p-4 text-[13px] font-[700] text-[#000000B2] text-nowrap">
-                      {trx.bankId.accountType === "bank"
-                        ? trx.bankId.accountNo
-                        : trx.bankId.accountType === "upi"
-                        ? trx.bankId.accountHolderName
-                        : "-"}
-                    </td>
-                    <td className="p-4 text-[13px] font-[700] text-[#000000B2] text-nowrap">
-                      {trx.bankId.accountType === "bank"
-                        ? trx.bankId.ifsc
-                        : trx.bankId.accountType === "upi"
-                        ? trx.bankId.iban
-                        : "-"}
-                    </td>
-                    <td className="p-4 text-[13px] font-[700] text-[#000000B2]">
-                      <FaIndianRupeeSign className="inline-block mt-[-1px]" /> {trx.total}
-                    </td>
-                    <td className="p-4 text-[13px] font-[500]">
-                      <span
-                        className={`px-2  py-1 rounded-[20px] text-nowrap text-[11px] font-[600] min-w-20 flex items-center justify-center ${
-                          trx.status === "Approved"
-                            ? "bg-[#10CB0026] text-[#0DA000]"
-                            : trx.status === "Pending"
-                            ? "bg-[#FFC70126] text-[#FFB800]"
-                            : "bg-[#FF7A8F33] text-[#FF002A]"
-                        }`}
-                      >
-                        {trx.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-                {/* Dynamic Data */}
                 {loading ? (
                   <tr>
                     <td colSpan="7" className="text-center p-4">
@@ -403,19 +380,31 @@ const Home = ({ authorization, showSidebar }) => {
                         className="text-gray-800 text-sm border-b"
                       >
                         <td className="p-4 text-[13px] font-[600] text-[#000000B2]">
-                          {trx.trnNo}
+                          {trx.trnId}
                         </td>
                         <td className="p-4 text-[13px] font-[600] text-[#000000B2] whitespace-nowrap">
                           {trx.createdAt
                             ? new Date(trx.createdAt).toLocaleString()
                             : "-"}
                         </td>
-                        {/* Account/Name */}
+                        {/* Account Holder Name */}
+                        <td className="p-4 text-[13px] font-[700] text-[#000000B2] text-nowrap">
+                          {trx.bankId.accountHolderName || "-"}
+                        </td>
+                        {/* Bank Name */}
+                        <td className="p-4 text-[13px] font-[700] text-[#000000B2] text-nowrap">
+                          {trx.bankId.accountType === "bank"
+                            ? trx.bankId.bankName || "-"
+                            : trx.bankId.accountType === "upi"
+                            ? "UPI"
+                            : "-"}
+                        </td>
+                        {/* Account Number */}
                         <td className="p-4 text-[13px] font-[700] text-[#000000B2] text-nowrap">
                           {trx.bankId.accountType === "bank"
                             ? trx.bankId.accountNo || "-"
                             : trx.bankId.accountType === "upi"
-                            ? trx.bankId.accountHolderName || "-"
+                            ? trx.bankId.upi || "-"
                             : "-"}
                         </td>
                         {/* IFSC/UPI */}
@@ -428,7 +417,8 @@ const Home = ({ authorization, showSidebar }) => {
                         </td>
                         {/* Amount */}
                         <td className="p-4 text-[13px] font-[700] text-[#000000B2]">
-                          <FaIndianRupeeSign className="inline-block mt-[-1px]" /> {trx.total}
+                          <FaIndianRupeeSign className="inline-block mt-[-1px]" />{" "}
+                          {trx.total}
                         </td>
                         {/* Status */}
                         <td className="p-4 text-[13px] font-[500]">
@@ -476,14 +466,33 @@ const Home = ({ authorization, showSidebar }) => {
               name="amount"
               rules={[{ required: true, message: "Please enter amount" }]}
             >
-              <Input prefix={<FaIndianRupeeSign />} placeholder="Enter amount" />
+              <Input
+                prefix={<FaIndianRupeeSign />}
+                placeholder="Enter amount"
+              />
             </Form.Item>
             <Form.Item
-              label="Account/Name"
-              name="account"
-              rules={[{ required: true, message: "Please enter account or name" }]}
+              label="Account Holder Name"
+              name="accountHolder"
+              rules={[
+                { required: true, message: "Please enter account or name" },
+              ]}
             >
               <Input placeholder="Enter account number or name" />
+            </Form.Item>
+            <Form.Item
+              label="Bank Name"
+              name="bankName"
+              rules={[{ required: true, message: "Please enter bank name" }]}
+            >
+              <Input placeholder="Enter bank name" />
+            </Form.Item>
+            <Form.Item
+              label="Account Number"
+              name="accountNumber"
+              rules={[{ required: true, message: "Please enter account number" }]}
+            >
+              <Input placeholder="Enter account number" />
             </Form.Item>
             <Form.Item
               label="Type"
@@ -496,26 +505,33 @@ const Home = ({ authorization, showSidebar }) => {
               </Select>
             </Form.Item>
             {/* Conditional fields for IFSC or UPI Number */}
-            <Form.Item shouldUpdate={(prev, curr) => prev.type !== curr.type} noStyle>
+            <Form.Item
+              shouldUpdate={(prev, curr) => prev.type !== curr.type}
+              noStyle
+            >
               {({ getFieldValue }) => {
-                const type = getFieldValue('type');
-                if (type === 'bank') {
+                const type = getFieldValue("type");
+                if (type === "bank") {
                   return (
                     <Form.Item
                       label="IFSC"
                       name="ifsc"
-                      rules={[{ required: true, message: "Please enter IFSC code" }]}
+                      rules={[
+                        { required: true, message: "Please enter IFSC code" },
+                      ]}
                     >
                       <Input placeholder="Enter IFSC code" />
                     </Form.Item>
                   );
                 }
-                if (type === 'upi') {
+                if (type === "upi") {
                   return (
                     <Form.Item
                       label="UPI Number"
                       name="upi"
-                      rules={[{ required: true, message: "Please enter UPI number" }]}
+                      rules={[
+                        { required: true, message: "Please enter UPI number" },
+                      ]}
                     >
                       <Input placeholder="Enter UPI number" />
                     </Form.Item>

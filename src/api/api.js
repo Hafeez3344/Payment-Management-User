@@ -2,43 +2,26 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import moment from "moment/moment";
 
-export const BACKEND_URL = "http://46.202.166.64:8015";
-// export const BACKEND_URL = "https://backend.gpay.one";
-// export const PDF_READ_URL = "https://pdf.royal247.org/parse-statement"
+export const BACKEND_URL = "http://46.202.166.64:8080";
+// export const BACKEND_URL = "https://payment-management-backend";
 
-// ------------------------------------- Merchant Login api------------------------------------
-export const fn_loginMerchantApi = async (data) => {
+
+
+// ------------------------------------- User Login api------------------------------------
+export const fn_loginUserApi = async (data) => {
     try {
-        const response = await axios.post(`${BACKEND_URL}/merchant/login`, data);
+        const response = await axios.post(`${BACKEND_URL}/user/login`, data);
         if (response?.status === 200) {
-            let id; let message; let website; let merchantVerified;
-            let token = response?.data?.token;
-
+            let message;
             if (response?.data?.type === "merchant") {
-                id = response?.data?.data?._id;
-                website = response?.data?.data?.website;
                 message = "Merchant Logged in successfully";
-                merchantVerified = response?.data?.data?.verify;
-                localStorage.setItem("userName", response?.data?.data?.merchantName);
             } else {
                 message = "Logged in successfully";
-                id = response?.data?.data?.merchantId?._id;
-                website = response?.data?.data?.merchantId?.website;
-                merchantVerified = response?.data?.data?.merchantId?.verify;
-                localStorage.setItem("userName", response?.data?.data?.userName);
-                localStorage.setItem("email", response?.data?.data?.email);
             }
-            Cookies.set("merchantId", id);
-            Cookies.set("website", website);
-            Cookies.set("merchantToken", token);
-            localStorage.setItem("merchantVerified", merchantVerified);
-
             return { 
                 status: true, 
-                message: message, 
-                token: token, 
-                website: website, 
-                merchantVerified: merchantVerified 
+                message: message,
+                data: response?.data
             };
         }
     } catch (error) {
@@ -48,6 +31,113 @@ export const fn_loginMerchantApi = async (data) => {
         return { status: false, message: "Network Error" };
     }
 };
+
+// -------------------------------- Create Payment api----------------------------------------
+export const fn_createPaymentApi = async (data) => {
+    try {
+        const response = await axios.post(`${BACKEND_URL}/payment/create`, data);
+        return {
+            status: true,
+            message: "Payment created successfully",
+            data: response.data
+        };
+    } catch (error) {
+        return { status: false, message: "Network Error" };
+    }
+}   
+
+// -------------------------------- get User  Payment api----------------------------------------
+export const fn_getUserPaymentApi = async () => {
+    try {
+        const token = Cookies.get("merchantToken");
+        const userId = Cookies.get("userId");
+        const response = await axios.get(`${BACKEND_URL}/payment/get/${userId}`, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+            },
+        });
+        return {
+            status: true,
+            message: "Payment fetched successfully",
+            data: response.data || []
+        };
+    } catch (error) {
+        return { status: false, message: "Network Error" };
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // -------------------------------- get All Merchant api----------------------------------------
 export const fn_getAllMerchantApi = async (status, pageNumber, merchant, searchQuery, searchTrnId, bankId, dateRange) => {

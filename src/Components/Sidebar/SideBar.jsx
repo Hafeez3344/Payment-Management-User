@@ -1,23 +1,16 @@
 import React from "react";
-import Cookies from "js-cookie";
 import { useNavigate } from "react-router-dom";
 import { MdOutlineDashboard } from "react-icons/md";
-import { LuLogOut, LuShieldCheck } from "react-icons/lu";
+import { LuLogOut } from "react-icons/lu";
 import Royal247Logo from "../../assets/Royal247Logo.png";
 
-const SideBar = ({ merchantVerified, showSidebar, setShowSide, setAuthorization, selectedPage, setSelectedPage, setMerchantVerified }) => {
-
+const SideBar = ({ showSidebar, setShowSide, setAuthorization, selectedPage, setSelectedPage }) => {
   const navigate = useNavigate();
   const isMobile = () => window.innerWidth < 1024;
   const fn_controlSidebar = () => { setShowSide(!showSidebar) };
 
   const fn_logout = () => {
-    Cookies.remove("website");
-    Cookies.remove("merchantId");
-    Cookies.remove("merchantToken");
-    localStorage.removeItem("merchantVerified");
     setAuthorization(false);
-    setMerchantVerified(true);
     window.location.reload();
     navigate("/login");
   };
@@ -40,25 +33,17 @@ const SideBar = ({ merchantVerified, showSidebar, setShowSide, setAuthorization,
         </button>
       </div>
       <div className="mt-[10px]">
-        {merchantVerified ? (
-          <>
-            <Menu
-              onClick={() => {
-                setSelectedPage("dashboard");
-                navigate("/");
-                if (isMobile()) fn_controlSidebar();
-              }}
-              label="Dashboard"
-              name="dashboard"
-              selectedPage={selectedPage}
-              icon={<MdOutlineDashboard className="text-[20px]" />}
-            />
-          </>
-        ) : (
-          <div>
-            <p>You are not authorized to access this page</p>
-          </div>
-        )}
+        <Menu
+          onClick={() => {
+            setSelectedPage("dashboard");
+            navigate("/");
+            if (isMobile()) fn_controlSidebar();
+          }}
+          label="Dashboard"
+          name="dashboard"
+          selectedPage={selectedPage}
+          icon={<MdOutlineDashboard className="text-[20px]" />}
+        />
         <div
           onClick={fn_logout}
           className="flex border-t gap-[15px] items-center py-[14px] px-[20px] cursor-pointer absolute bottom-0 w-full"
