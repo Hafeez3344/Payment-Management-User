@@ -1,15 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button, Form, Grid, Input, Typography, notification } from "antd";
-import { LockOutlined, MailOutlined } from "@ant-design/icons";
-import logo from "../../assets/logo.png";
+import { LockOutlined, MailOutlined, UserOutlined } from "@ant-design/icons";
 import { fn_signUpUserApi } from "../../api/api";
 import Cookies from "js-cookie";
 
 const { useBreakpoint } = Grid;
 const { Text, Title } = Typography;
 
-const MerchantLogin = ({ authorization, setAuthorization }) => {
+const MerchantSignUp = ({ authorization, setAuthorization }) => {
     const navigate = useNavigate();
     const screens = useBreakpoint();
 
@@ -165,7 +164,7 @@ const MerchantLogin = ({ authorization, setAuthorization }) => {
                         ]}
                     >
                         <Input
-                            prefix={<MailOutlined className="site-form-item-icon" />}
+                            prefix={<UserOutlined className="site-form-item-icon" />}
                             placeholder="Name"
                             value={nameInput}
                             onChange={(e) => setNameInput(e.target.value)}
@@ -223,4 +222,4 @@ const MerchantLogin = ({ authorization, setAuthorization }) => {
     );
 };
 
-export default MerchantLogin;
+export default MerchantSignUp;

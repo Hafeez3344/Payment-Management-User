@@ -130,6 +130,17 @@ const MerchantLogin = ({ authorization, setAuthorization }) => {
           <Title level={2} style={styles.title}>
             User Login
           </Title>
+           <div style={{ marginBottom: 16, textAlign: "center" }}>
+            <span>
+              Do not have an account?{" "}
+              <span
+                style={{ color: "#1890ff", cursor: "pointer", fontWeight: 500 }}
+                onClick={() => navigate("/signup")}
+              >
+                Sign Up
+              </span>
+            </span>
+          </div>
           <Text style={styles.text}>
             Welcome back! Please enter your details below to log in as a user.
           </Text>
@@ -142,17 +153,6 @@ const MerchantLogin = ({ authorization, setAuthorization }) => {
           }}
           onFinish={onFinish}
         >
-          <div style={{ marginBottom: 16, textAlign: "center" }}>
-            <span>
-              Do not have an account?{" "}
-              <span
-                style={{ color: "#1890ff", cursor: "pointer", fontWeight: 500 }}
-                onClick={() => navigate("/Merchant-SignUp")}
-              >
-                Sign Up
-              </span>
-            </span>
-          </div>
           <Form.Item
             name="email"
             rules={[

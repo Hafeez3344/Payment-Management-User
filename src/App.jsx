@@ -7,6 +7,7 @@ import NavBar from "./Components/NabBar/NavBar";
 import Footer from "./Components/Footer/Footer";
 import SideBar from "./Components/Sidebar/SideBar";
 import MerchantLogin from "./Pages/Merchant-Login/MerchantLogin";
+import MerchantSignUp from "./Pages/Merchant-SignUp/MerchantSignUp";
 
 function App() {
 
@@ -52,6 +53,15 @@ function App() {
             }
           />
           <Route
+            path="/signup"
+            element={
+              <MerchantSignUp
+                authorization={authorization}
+                setAuthorization={setAuthorization}
+              />
+            }
+          />
+          <Route
             path="/"
             element={
               authorization ? (
@@ -65,6 +75,7 @@ function App() {
               )
             }
           />
+
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
         {/* Footer only when authorized */}
