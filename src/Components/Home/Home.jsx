@@ -141,6 +141,17 @@ const Home = ({ authorization, showSidebar }) => {
     return `${year}-${month}-${day}`;
   };
 
+  const options = {
+    weekday: 'short',     // Thu
+    day: '2-digit',       // 22
+    month: 'short',       // May
+    year: 'numeric',      // 2025
+    hour: '2-digit',      // 11
+    minute: '2-digit',    // 13
+    hour12: true,         // PM
+    timeZone: 'UTC'       // Ensure UTC time
+  };
+
   return (
     <div
       className={`bg-gray-100 transition-all duration-500 ${showSidebar ? "pl-0 md:pl-[270px]" : "pl-0"
@@ -304,9 +315,10 @@ const Home = ({ authorization, showSidebar }) => {
                       {trx.trnId}
                     </td>
                     <td className="p-4 text-[13px] font-[600] text-[#1a237e] whitespace-nowrap">
-                      {trx.createdAt
+                      {/* {trx.createdAt
                         ? new Date(trx.createdAt).toLocaleString()
-                        : "-"}
+                        : "-"} */}
+                        {trx.createdAt ? new Date(trx.createdAt).toLocaleString('en-US', options).replace(',', '').replace(' at', '') : "-"}
                     </td>
                     {/* Account Holder Name */}
                     <td className="p-4 text-[13px] font-[700] text-[#1a237e] text-nowrap">
