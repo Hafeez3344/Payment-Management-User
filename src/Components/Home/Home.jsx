@@ -192,7 +192,7 @@ const Home = ({ authorization, showSidebar }) => {
       <div className="p-7">
         {/* Header Section */}
         <div className="flex flex-col md:flex-row gap-[12px] items-center justify-between mb-5">
-          <h1 className="text-[25px] font-[500]">Payment Management User</h1>
+          <h1 className="text-[25px] font-[500]">Payment Management User Side</h1>
           <div className="flex items-center space-x-2">
             <div className="flex space-x-2 text-[12px]">
               <button
