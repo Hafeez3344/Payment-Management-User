@@ -7,6 +7,7 @@ import { Button, DatePicker, Space, Modal, Input, message, Form, Select, Paginat
 import BACKEND_URL, { fn_createPaymentApi, fn_getUserPaymentApi } from "../../api/api";
 
 import { FaIndianRupeeSign } from "react-icons/fa6";
+import { FaCheckCircle, FaHourglassHalf, FaTimesCircle, FaSpinner } from "react-icons/fa";
 
 const Home = ({ authorization, showSidebar }) => {
 
@@ -194,94 +195,47 @@ const Home = ({ authorization, showSidebar }) => {
         </div> */}
 
         {/* Boxes Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-7 text-nowrap">
-          <div
-            className="bg-white px-[14px] py-[10px] rounded-[5px] shadow text-white"
-            style={{
-              backgroundImage:
-                "linear-gradient(to right, rgba(0, 150, 102, 1), rgba(59, 221, 169, 1))",
-            }}
-          >
-            <h2 className="text-[13px] uppercase font-[500]">
-              Approved Payments
-            </h2>
-            <p className="mt-[13px] text-[20px] font-[700]">
-              ₹ {Number(summaryData?.approvedAmount || 0).toFixed(2)}
-            </p>
-            <p className="pt-[3px] text-[13px] font-[500] mb-[7px]">
-              No. of Approved Payments:{" "}
-              <span className="font-[700]">
-                {Number(summaryData?.approvedCount || 0)}
-              </span>
-            </p>
+        <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-3 xl:grid-cols-3 gap-4 mb-7 text-nowrap">
+          <div className="bg-[#009666] px-[14px] py-[20px] rounded-[5px] shadow text-white flex items-center justify-between">
+            <div>
+              <h2 className="text-[13px] uppercase font-[500]">Approved Payments</h2>
+              <p className="mt-[13px] text-[20px] font-[700]">₹ {Number(summaryData?.approvedAmount || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+              <p className="pt-[3px] text-[13px] font-[500] mb-[7px]">No. of Approved Payments: <span className="font-[700]">{Number(summaryData?.approvedCount || 0)}</span></p>
+            </div>
+            <FaCheckCircle className="text-[38px] opacity-70" />
           </div>
-
-          <div
-            className="bg-white px-[14px] py-[10px] rounded-[5px] shadow text-white"
-            style={{
-              backgroundImage:
-                "linear-gradient(to right, rgba(245, 118, 0, 1), rgba(255, 196, 44, 1))",
-            }}
-          >
-            <h2 className="text-[13px] uppercase font-[500]">
-              Pending Payments
-            </h2>
-            <p className="mt-[13px] text-[20px] font-[700]">
-              ₹ {Number(summaryData?.pendingAmount).toFixed(2)}
-            </p>
-            <p className="pt-[3px] text-[13px] font-[500] mb-[7px]">
-              No. of Pending Payments:{" "}
-              <span className="font-[700]">
-                {summaryData?.pendingCount}
-              </span>
-            </p>
+          <div className="bg-[#f57600] px-[14px] py-[10px] rounded-[5px] shadow text-white flex items-center justify-between">
+            <div>
+              <h2 className="text-[13px] uppercase font-[500]">Pending Payments</h2>
+              <p className="mt-[13px] text-[20px] font-[700]">₹ {Number(summaryData?.pendingAmount || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+              <p className="pt-[3px] text-[13px] font-[500] mb-[7px]">No. of Pending Payments: <span className="font-[700]">{Number(summaryData?.pendingCount || 0)}</span></p>
+            </div>
+            <FaHourglassHalf className="text-[38px] opacity-70" />
           </div>
-
-          <div
-            className="bg-white px-[14px] py-[10px] rounded-[5px] shadow text-white"
-            style={{
-              backgroundImage:
-                "linear-gradient(to right, rgba(255, 61, 92, 1), rgba(255, 122, 143, 1))",
-            }}
-          >
-            <h2 className="text-[13px] uppercase font-[500]">
-              Rejected Payments
-            </h2>
-            <p className="mt-[13px] text-[20px] font-[700]">
-              ₹ {Number(summaryData?.declinedAmount || 0).toFixed(2)}
-            </p>
-            <p className="pt-[3px] text-[13px] font-[500] mb-[7px]">
-              No. of Rejected Payments:{" "}
-              <span className="font-[700]">
-                {summaryData?.declinedCount || 0}
-              </span>
-            </p>
+          <div className="bg-[#ff3d5c] px-[14px] py-[10px] rounded-[5px] shadow text-white flex items-center justify-between">
+            <div>
+              <h2 className="text-[13px] uppercase font-[500]">Rejected Payments</h2>
+              <p className="mt-[13px] text-[20px] font-[700]">₹ {Number(summaryData?.declinedAmount || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+              <p className="pt-[3px] text-[13px] font-[500] mb-[7px]">No. of Rejected Payments: <span className="font-[700]">{Number(summaryData?.declinedCount || 0)}</span></p>
+            </div>
+            <FaTimesCircle className="text-[38px] opacity-70" />
           </div>
-
-          <div
-            className="bg-white px-[14px] py-[10px] rounded-[5px] shadow text-white"
-            style={{
-              backgroundImage:
-                "linear-gradient(to right, rgba(148, 0, 211, 1), rgba(186, 85, 211, 1))",
-            }}
-          >
-            <h2 className="text-[13px] uppercase font-[500]">in progress</h2>
-            <p className="mt-[13px] text-[20px] font-[700]">
-              ₹ 0
-            </p>
-            <p className="pt-[3px] text-[13px] font-[500] mb-[7px]">
-              No. of Processing Payments:{" "}
-              <span className="font-[700]">0</span>
-            </p>
-          </div>
+          {/* <div className="bg-[#9400d3] px-[14px] py-[10px] rounded-[5px] shadow text-white flex items-center justify-between">
+            <div>
+              <h2 className="text-[13px] uppercase font-[500]">Processing Payments</h2>
+              <p className="mt-[13px] text-[20px] font-[700]">₹ {Number(summaryData?.processingAmount || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+              <p className="pt-[3px] text-[13px] font-[500] mb-[7px]">No. of Processing Payments: <span className="font-[700]">{Number(summaryData?.processingCount || 0)}</span></p>
+            </div>
+            <FaSpinner className="text-[38px] opacity-70 animate-spin-slow" />
+          </div> */}
         </div>
 
         {/* Transaction Table Section */}
-        <div className="bg-white rounded-lg p-4">
+        <div className="bg-white rounded-xl shadow-lg p-4">
           <div className="flex flex-col md:flex-row items-center justify-between pb-3">
             <div className="flex justify-between items-center w-full">
               <p className="text-black font-[500] text-[24px] mr-2">
-                All Transactions
+                All Payments
               </p>
               <div className="flex gap-[10px]">
                 {/* Date Range Picker */}
@@ -315,51 +269,51 @@ const Home = ({ authorization, showSidebar }) => {
           </div>
           <div className="w-full border-t-[1px] border-[#DDDDDD80] hidden sm:block mb-4"></div>
           <div className="overflow-x-auto">
-            <table className="min-w-full border">
+            <table className="min-w-full border-separate border-spacing-0 rounded-xl overflow-hidden bg-white">
               <thead>
-                <tr className="bg-[#ECF0FA] text-left text-[12px] text-gray-700">
-                  <th className="p-4 text-nowrap">TRN-ID</th>
+                <tr className="bg-[#4f8cff] text-left text-[13px] text-white rounded-t-xl">
+                  <th className="p-4 text-nowrap rounded-tl-xl">TRN-ID</th>
                   <th className="p-4">Date</th>
                   <th className="p-4 text-nowrap">Account Holder Name</th>
                   <th className="p-4 text-nowrap">Bank Name</th>
                   <th className="p-4 text-nowrap">Account Number</th>
                   <th className="p-4 text-nowrap">{`IFSC / UPI ID`}</th>
                   <th className="p-4 text-nowrap">Amount</th>
-                  <th className="p-4 text- pl-16">Status</th>
+                  <th className="p-4 text- pl-16 rounded-tr-xl">Status</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="7" className="text-center p-4">
+                    <td colSpan="8" className="text-center p-4">
                       Loading...
                     </td>
                   </tr>
                 ) : error ? (
                   <tr>
-                    <td colSpan="7" className="text-center p-4 text-red-500">
+                    <td colSpan="8" className="text-center p-4 text-red-500">
                       {error}
                     </td>
                   </tr>
                 ) : recentTransactions?.length > 0 ? recentTransactions?.map((trx, idx) => (
                   <tr
                     key={trx._id || idx}
-                    className="text-gray-800 text-sm border-b"
+                    className="text-gray-800 text-sm border-b border-[#e3eafc] hover:bg-[#eaf4ff] transition-colors"
                   >
-                    <td className="p-4 text-[13px] font-[600] text-[#000000B2]">
+                    <td className="p-4 text-[13px] font-[600] text-[#1a237e]">
                       {trx.trnId}
                     </td>
-                    <td className="p-4 text-[13px] font-[600] text-[#000000B2] whitespace-nowrap">
+                    <td className="p-4 text-[13px] font-[600] text-[#1a237e] whitespace-nowrap">
                       {trx.createdAt
                         ? new Date(trx.createdAt).toLocaleString()
                         : "-"}
                     </td>
                     {/* Account Holder Name */}
-                    <td className="p-4 text-[13px] font-[700] text-[#000000B2] text-nowrap">
+                    <td className="p-4 text-[13px] font-[700] text-[#1a237e] text-nowrap">
                       {trx.bankId.accountHolderName || "-"}
                     </td>
                     {/* Bank Name */}
-                    <td className="p-4 text-[13px] font-[700] text-[#000000B2] text-nowrap">
+                    <td className="p-4 text-[13px] font-[700] text-[#1a237e] text-nowrap">
                       {trx.bankId.accountType === "bank"
                         ? trx.bankId.bankName || "-"
                         : trx.bankId.accountType === "upi"
@@ -367,7 +321,7 @@ const Home = ({ authorization, showSidebar }) => {
                           : "-"}
                     </td>
                     {/* Account Number */}
-                    <td className="p-4 text-[13px] font-[700] text-[#000000B2] text-nowrap">
+                    <td className="p-4 text-[13px] font-[700] text-[#1a237e] text-nowrap">
                       {trx.bankId.accountType === "bank"
                         ? trx.bankId.accountNo || "-"
                         : trx.bankId.accountType === "upi"
@@ -375,15 +329,15 @@ const Home = ({ authorization, showSidebar }) => {
                           : "-"}
                     </td>
                     {/* IFSC/UPI */}
-                    <td className="p-4 text-[13px] font-[700] text-[#000000B2] text-nowrap">
+                    <td className="p-4 text-[13px] font-[700] text-[#1a237e] text-nowrap">
                       {trx.bankId.accountType === "bank"
                         ? trx.bankId.ifsc || "MOCKIFSC001"
                         : trx.bankId.accountType === "upi"
                           ? trx.bankId.iban || "-"
-                          : "-"}
+                          : "-"} 
                     </td>
                     {/* Amount */}
-                    <td className="p-4 text-[13px] font-[700] text-[#000000B2] text-nowrap">
+                    <td className="p-4 text-[13px] font-[700] text-[#1a237e] text-nowrap">
                       <FaIndianRupeeSign className="inline-block mt-[-1px]" />{" "}
                       {trx.total}
                     </td>
@@ -403,7 +357,7 @@ const Home = ({ authorization, showSidebar }) => {
                   </tr>
                 )) : (
                   <tr>
-                    <td colSpan="7" className="text-center p-4 text-gray-500">
+                    <td colSpan="8" className="text-center p-4 text-gray-500">
                       No Payment Found.
                     </td>
                   </tr>
