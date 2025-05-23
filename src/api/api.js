@@ -7,7 +7,7 @@ export const BACKEND_URL = "http://46.202.166.64:8080";
 
 
 
-// ------------------------------------- User Login api------------------------------------
+// ------------------------------------- User Login api ------------------------------------
 export const fn_loginUserApi = async (data) => {
     try {
         const response = await axios.post(`${BACKEND_URL}/user/login`, data);

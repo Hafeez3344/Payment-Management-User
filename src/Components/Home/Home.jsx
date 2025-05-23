@@ -7,6 +7,7 @@ import {
   message,
   Form,
   Select,
+  Pagination,
 } from "antd";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -42,6 +43,8 @@ const Home = ({ authorization, showSidebar }) => {
   const [recentTransactions, setRecentTransactions] = useState([]);
   const [createPaymentModalOpen, setCreatePaymentModalOpen] = useState(false);
   const [form] = Form.useForm();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
     window.scroll(0, 0);
@@ -73,7 +76,7 @@ const Home = ({ authorization, showSidebar }) => {
         }));
         // Sort by createdAt descending (latest first)
         mapped.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        setRecentTransactions(mapped.slice(0, 10));
+        setRecentTransactions(mapped);
       } else {
         setRecentTransactions([]);
       }
@@ -121,7 +124,7 @@ const Home = ({ authorization, showSidebar }) => {
         }));
         // Sort by createdAt descending (latest first)
         mapped.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        setRecentTransactions(mapped.slice(0, 10));
+        setRecentTransactions(mapped);
       } else {
         setRecentTransactions([]);
       }
@@ -145,16 +148,21 @@ const Home = ({ authorization, showSidebar }) => {
   const handleCreatePayment = async (values) => {
     try {
       setLoading(true);
-      const trnId = `TRN${Date.now()}`;
       const userId = Cookies.get("userId");
       const { type, ...rest } = values;
-      const response = await fn_createPaymentApi({
+      // For UPI, remove bankName, accountNumber, ifsc if present
+      let payload = {
         ...rest,
         status: "Pending",
         transactionType: type,
-        trnId,
         userId,
-      });
+      };
+      if (type === "upi") {
+        delete payload.bankName;
+        delete payload.accountNumber;
+        delete payload.ifsc;
+      }
+      const response = await fn_createPaymentApi(payload);
       if (response.status) {
         message.success("Payment created successfully");
         closeCreatePaymentModal();
@@ -168,6 +176,11 @@ const Home = ({ authorization, showSidebar }) => {
       setLoading(false);
     }
   };
+
+  const paginatedTransactions = recentTransactions.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   return (
     <div
@@ -247,19 +260,19 @@ const Home = ({ authorization, showSidebar }) => {
             className="bg-white px-[14px] py-[10px] rounded-[5px] shadow text-white"
             style={{
               backgroundImage:
-                "linear-gradient(to right, rgba(245, 118, 0, 1), rgba(255, 196, 44, 1))",
+                "linear-gradient(to right, rgba(0, 150, 102, 1), rgba(59, 221, 169, 1))",
             }}
           >
             <h2 className="text-[13px] uppercase font-[500]">
-              Pending Transactions
+              Approved Payments
             </h2>
             <p className="mt-[13px] text-[20px] font-[700]">
-              ₹ {Number(unverifiedTransactions).toFixed(2)}
+              ₹ {Number(merchantAvailBalance).toFixed(2)}
             </p>
             <p className="pt-[3px] text-[13px] font-[500] mb-[7px]">
-              No. of Pending Transactions:{" "}
+              No. of Approved Payments:{" "}
               <span className="font-[700]">
-                {cardData.pending.totalTransaction || 0}
+                 {Number(verifiedTransactions) }
               </span>
             </p>
           </div>
@@ -267,22 +280,23 @@ const Home = ({ authorization, showSidebar }) => {
             className="bg-white px-[14px] py-[10px] rounded-[5px] shadow text-white"
             style={{
               backgroundImage:
-                "linear-gradient(to right, rgba(0, 150, 102, 1), rgba(59, 221, 169, 1))",
+                "linear-gradient(to right, rgba(245, 118, 0, 1), rgba(255, 196, 44, 1))",
             }}
           >
             <h2 className="text-[13px] uppercase font-[500]">
-              Approved Transactions
+              Pending Payments
             </h2>
             <p className="mt-[13px] text-[20px] font-[700]">
-              ₹ {Number(merchantAvailBalance).toFixed(2)}
+              ₹ {Number(unverifiedTransactions).toFixed(2)}
             </p>
             <p className="pt-[3px] text-[13px] font-[500] mb-[7px]">
-              No. of Approved Transactions:{" "}
+              No. of Pending Payments:{" "}
               <span className="font-[700]">
-                ₹ {Number(verifiedTransactions).toFixed(2) || 0}
+                {cardData.pending.totalTransaction } <span>0</span>
               </span>
             </p>
           </div>
+          
 
           <div
             className="bg-white px-[14px] py-[10px] rounded-[5px] shadow text-white"
@@ -292,13 +306,13 @@ const Home = ({ authorization, showSidebar }) => {
             }}
           >
             <h2 className="text-[13px] uppercase font-[500]">
-              Rejected Transactions
+              Rejected Payments
             </h2>
             <p className="mt-[13px] text-[20px] font-[700]">
               ₹ {Number(declineTransactions).toFixed(2)}
             </p>
             <p className="pt-[3px] text-[13px] font-[500] mb-[7px]">
-              No. of Rejected Transactions:{" "}
+              No. of Rejected Payments:{" "}
               <span className="font-[700]">
                 {cardData.failed.totalTransaction || 0}
               </span>
@@ -316,7 +330,7 @@ const Home = ({ authorization, showSidebar }) => {
               ₹ {Number(adminCharges).toFixed(2)}
             </p>
             <p className="pt-[3px] text-[13px] font-[500] mb-[7px]">
-              No. of Processing Transactions:{" "}
+              No. of Processing Payments:{" "}
               <span className="font-[700]">{totalTrns}</span>
             </p>
           </div>
@@ -348,7 +362,7 @@ const Home = ({ authorization, showSidebar }) => {
                   <th className="p-4 text-nowrap">Account Holder Name</th>
                   <th className="p-4 text-nowrap">Bank Name</th>
                   <th className="p-4 text-nowrap">Account Number</th>
-                  <th className="p-4 text-nowrap">{`IFSC / UPI`}</th>
+                  <th className="p-4 text-nowrap">{`IFSC / UPI ID`}</th>
                   <th className="p-4 text-nowrap">Amount</th>
                   <th className="p-4 text- pl-16">Status</th>
                 </tr>
@@ -367,7 +381,7 @@ const Home = ({ authorization, showSidebar }) => {
                     </td>
                   </tr>
                 ) : recentTransactions.length > 0 ? (
-                  recentTransactions
+                  paginatedTransactions
                     .filter(
                       (trx) =>
                         trx.bankId &&
@@ -404,7 +418,7 @@ const Home = ({ authorization, showSidebar }) => {
                           {trx.bankId.accountType === "bank"
                             ? trx.bankId.accountNo || "-"
                             : trx.bankId.accountType === "upi"
-                            ? trx.bankId.upi || "-"
+                            ? "-"
                             : "-"}
                         </td>
                         {/* IFSC/UPI */}
@@ -416,7 +430,7 @@ const Home = ({ authorization, showSidebar }) => {
                             : "-"}
                         </td>
                         {/* Amount */}
-                        <td className="p-4 text-[13px] font-[700] text-[#000000B2]">
+                        <td className="p-4 text-[13px] font-[700] text-[#000000B2] text-nowrap">
                           <FaIndianRupeeSign className="inline-block mt-[-1px]" />{" "}
                           {trx.total}
                         </td>
@@ -439,13 +453,28 @@ const Home = ({ authorization, showSidebar }) => {
                 ) : (
                   <tr>
                     <td colSpan="7" className="text-center p-4 text-gray-500">
-                      No Transactions found.
+                      No Payment Found.
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
+          {/* Pagination Controls */}
+          {recentTransactions.length > 0 && (
+            <div className="flex justify-end mt-4">
+              <Pagination
+                current={currentPage}
+                pageSize={pageSize}
+                total={recentTransactions.length}
+                showSizeChanger={false}
+                onChange={(page) => {
+                  setCurrentPage(page);
+                }}
+                className="custom-pagination"
+              />
+            </div>
+          )}
         </div>
 
         {/* Create Payment Modal */}
@@ -472,29 +501,6 @@ const Home = ({ authorization, showSidebar }) => {
               />
             </Form.Item>
             <Form.Item
-              label="Account Holder Name"
-              name="accountHolder"
-              rules={[
-                { required: true, message: "Please enter account or name" },
-              ]}
-            >
-              <Input placeholder="Enter account number or name" />
-            </Form.Item>
-            <Form.Item
-              label="Bank Name"
-              name="bankName"
-              rules={[{ required: true, message: "Please enter bank name" }]}
-            >
-              <Input placeholder="Enter bank name" />
-            </Form.Item>
-            <Form.Item
-              label="Account Number"
-              name="accountNumber"
-              rules={[{ required: true, message: "Please enter account number" }]}
-            >
-              <Input placeholder="Enter account number" />
-            </Form.Item>
-            <Form.Item
               label="Type"
               name="type"
               rules={[{ required: true, message: "Please select type" }]}
@@ -504,37 +510,66 @@ const Home = ({ authorization, showSidebar }) => {
                 <Select.Option value="upi">UPI</Select.Option>
               </Select>
             </Form.Item>
-            {/* Conditional fields for IFSC or UPI Number */}
-            <Form.Item
-              shouldUpdate={(prev, curr) => prev.type !== curr.type}
-              noStyle
-            >
+            {/* Conditional fields for IFSC or UPI Number and other fields */}
+            <Form.Item shouldUpdate={(prev, curr) => prev.type !== curr.type} noStyle>
               {({ getFieldValue }) => {
                 const type = getFieldValue("type");
                 if (type === "bank") {
                   return (
-                    <Form.Item
-                      label="IFSC"
-                      name="ifsc"
-                      rules={[
-                        { required: true, message: "Please enter IFSC code" },
-                      ]}
-                    >
-                      <Input placeholder="Enter IFSC code" />
-                    </Form.Item>
+                    <>
+                      <Form.Item
+                        label="Account Holder Name"
+                        name="accountHolder"
+                        rules={[
+                          { required: true, message: "Please enter account holder name" },
+                        ]}
+                      >
+                        <Input placeholder="Enter account holder name" />
+                      </Form.Item>
+                      <Form.Item
+                        label="Bank Name"
+                        name="bankName"
+                        rules={[{ required: true, message: "Please enter bank name" }]}
+                      >
+                        <Input placeholder="Enter bank name" />
+                      </Form.Item>
+                      <Form.Item
+                        label="Account Number"
+                        name="accountNumber"
+                        rules={[{ required: true, message: "Please enter account number" }]}
+                      >
+                        <Input placeholder="Enter account number" />
+                      </Form.Item>
+                      <Form.Item
+                        label="IFSC"
+                        name="ifsc"
+                        rules={[{ required: true, message: "Please enter IFSC code" }]}
+                      >
+                        <Input placeholder="Enter IFSC code" />
+                      </Form.Item>
+                    </>
                   );
                 }
                 if (type === "upi") {
                   return (
-                    <Form.Item
-                      label="UPI Number"
-                      name="upi"
-                      rules={[
-                        { required: true, message: "Please enter UPI number" },
-                      ]}
-                    >
-                      <Input placeholder="Enter UPI number" />
-                    </Form.Item>
+                    <>
+                      <Form.Item
+                        label="Account Holder Name"
+                        name="accountHolder"
+                        rules={[
+                          { required: true, message: "Please enter account holder name" },
+                        ]}
+                      >
+                        <Input placeholder="Enter account holder name" />
+                      </Form.Item>
+                      <Form.Item
+                        label="UPI ID"
+                        name="upi"
+                        rules={[{ required: true, message: "Please enter UPI ID" }]}
+                      >
+                        <Input placeholder="Enter UPI ID" />
+                      </Form.Item>
+                    </>
                   );
                 }
                 return null;
