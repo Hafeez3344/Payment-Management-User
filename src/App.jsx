@@ -1,6 +1,6 @@
 import "./App.css";
-import { Routes, Route, useNavigate, Navigate } from "react-router-dom";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
 
 import Home from "./Components/Home/Home";
 import NavBar from "./Components/NabBar/NavBar";
@@ -9,15 +9,11 @@ import SideBar from "./Components/Sidebar/SideBar";
 import MerchantLogin from "./Pages/Merchant-Login/MerchantLogin";
 
 function App() {
+  
   const [selectedPage, setSelectedPage] = useState("");
   const [showSidebar, setShowSide] = useState(window.innerWidth > 760 ? true : false);
-  const [authorization, setAuthorizationState] = useState(
-    localStorage.getItem("isAuthorized") === "true"
-  );
+  const [authorization, setAuthorizationState] = useState(localStorage.getItem("isAuthorized") === "true");
 
-  const navigate = useNavigate();
-
-  // Wrap setAuthorization to also update localStorage
   const setAuthorization = (value) => {
     setAuthorizationState(value);
     if (value) {
@@ -25,11 +21,6 @@ function App() {
     } else {
       localStorage.removeItem("isAuthorized");
     }
-  };
-
-  const fn_logout = () => {
-    setAuthorization(false);
-    navigate("/login");
   };
 
   return (

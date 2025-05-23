@@ -47,20 +47,16 @@ export const fn_createPaymentApi = async (data) => {
 }   
 
 // -------------------------------- get User  Payment api----------------------------------------
-export const fn_getUserPaymentApi = async () => {
+export const fn_getUserPaymentApi = async (page, startDate, endDate) => {
     try {
-        const token = Cookies.get("merchantToken");
+        console.log("startDate", startDate);
+        console.log("endDate", endDate);
         const userId = Cookies.get("userId");
-        const response = await axios.get(`${BACKEND_URL}/payment/get/${userId}`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-            },
-        });
+        const response = await axios.get(`${BACKEND_URL}/payment/get/${userId}?page=${page}`);
         return {
             status: true,
             message: "Payment fetched successfully",
-            data: response.data || []
+            data: response.data || {}
         };
     } catch (error) {
         return { status: false, message: "Network Error" };
