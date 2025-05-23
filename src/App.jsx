@@ -9,9 +9,10 @@ import SideBar from "./Components/Sidebar/SideBar";
 import MerchantLogin from "./Pages/Merchant-Login/MerchantLogin";
 
 function App() {
-  
+
   const [selectedPage, setSelectedPage] = useState("");
-  const [showSidebar, setShowSide] = useState(window.innerWidth > 760 ? true : false);
+  // const [showSidebar, setShowSide] = useState(window.innerWidth > 760 ? true : false);
+  const [showSidebar, setShowSide] = useState(false);
   const [authorization, setAuthorizationState] = useState(localStorage.getItem("isAuthorized") === "true");
 
   const setAuthorization = (value) => {
@@ -38,7 +39,7 @@ function App() {
       <div>
         {/* Navbar only when authorized */}
         {authorization && (
-          <NavBar setShowSide={setShowSide} showSidebar={showSidebar} />
+          <NavBar setShowSide={setShowSide} showSidebar={showSidebar} setAuthorization={setAuthorization} />
         )}
         <Routes>
           <Route

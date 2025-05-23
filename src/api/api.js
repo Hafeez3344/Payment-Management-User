@@ -18,8 +18,8 @@ export const fn_loginUserApi = async (data) => {
             } else {
                 message = "Logged in successfully";
             }
-            return { 
-                status: true, 
+            return {
+                status: true,
                 message: message,
                 data: response?.data
             };
@@ -44,7 +44,7 @@ export const fn_createPaymentApi = async (data) => {
     } catch (error) {
         return { status: false, message: "Network Error" };
     }
-}   
+}
 
 // -------------------------------- get User  Payment api----------------------------------------
 export const fn_getUserPaymentApi = async (page, startDate, endDate) => {
@@ -52,7 +52,7 @@ export const fn_getUserPaymentApi = async (page, startDate, endDate) => {
         console.log("startDate", startDate);
         console.log("endDate", endDate);
         const userId = Cookies.get("userId");
-        const response = await axios.get(`${BACKEND_URL}/payment/get/${userId}?page=${page}`);
+        const response = await axios.get(`${BACKEND_URL}/payment/get/${userId}?page=${page}${(startDate && endDate) ? `&startDate=${startDate}&endDate=${endDate}` : ''}`);
         return {
             status: true,
             message: "Payment fetched successfully",

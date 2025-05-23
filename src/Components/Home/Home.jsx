@@ -17,6 +17,7 @@ const Home = ({ authorization, showSidebar }) => {
   const containerHeight = window.innerHeight - 120;
   const [activeFilter, setActiveFilter] = useState("all");
   const [dateRange, setDateRange] = useState([null, null]);
+  const [dateRange2, setDateRange2] = useState([null, null]);
 
   const [recentTransactions, setRecentTransactions] = useState([]);
   const [createPaymentModalOpen, setCreatePaymentModalOpen] = useState(false);
@@ -35,7 +36,7 @@ const Home = ({ authorization, showSidebar }) => {
     if (!authorization) {
       navigate("/login");
     }
-    fetchAllData(1);
+    fetchAllData(1, null, null);
   }, [authorization, navigate]);
 
   const fetchAllData = async (page, startDate = null, endDate = null) => {
@@ -59,6 +60,7 @@ const Home = ({ authorization, showSidebar }) => {
         }));
         setRecentTransactions(mapped);
         setTotalPages(response?.data?.pagination?.total || 1); // Update total pages dynamically
+        setCurrentPage(response?.data?.pagination?.page || 1); // Update total pages dynamically
       } else {
         setRecentTransactions([]);
       }
@@ -71,52 +73,12 @@ const Home = ({ authorization, showSidebar }) => {
     }
   };
 
-  useEffect(() => {
-    if (authorization) {
-      fetchAllData(currentPage);
-    }
-  }, [dateRange]);
-
   const resetFilters = () => {
-    setDateRange([null, null]);
+    setCurrentPage(1)
+    setDateRange(() => [null, null]);
+    setDateRange2(() => [null, null]);
     setActiveFilter("all");
-    fetchAllData(currentPage);
-  };
-
-  const handleFilterClick = async (filterType) => {
-    setLoading(true);
-    setActiveFilter(filterType);
-    setDateRange([null, null]);
-    try {
-      const response = await fn_getUserPaymentApi();
-      if (response?.status && response?.data) {
-        const payments = Array.isArray(response.data) ? response.data : response.data.data || response.data.payments || [];
-        const mapped = payments.map(payment => ({
-          ...payment,
-          bankId: {
-            accountType: payment.transactionType,
-            accountNo: payment.accountNumber,
-            bankName: payment.bankName,
-            ifsc: payment.ifsc,
-            accountHolderName: payment.accountHolder,
-            iban: payment.upi || "",
-            upi: payment.upi || ""
-          },
-          total: payment.amount,
-        }));
-        // Sort by createdAt descending (latest first)
-        mapped.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        setRecentTransactions(mapped);
-      } else {
-        setRecentTransactions([]);
-      }
-    } catch (err) {
-      console.error("Error fetching filtered data:", err);
-      setError("Failed to fetch filtered data");
-      setRecentTransactions([]);
-    } finally {
-      setLoading(false);
-    }
+    fetchAllData(1, null, null);
   };
 
   const openCreatePaymentModal = () => {
@@ -149,7 +111,8 @@ const Home = ({ authorization, showSidebar }) => {
       if (response.status) {
         message.success("Payment created successfully");
         closeCreatePaymentModal();
-        fetchAllData(1);
+        const [startDate, endDate] = dateRange;
+        fetchAllData(1, startDate || null, endDate || null);
         fn_getSummary();
       } else {
         message.error(response.message || "Failed to create payment");
@@ -169,6 +132,14 @@ const Home = ({ authorization, showSidebar }) => {
     }
   };
 
+  const formatDate = (date) => {
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   return (
     <div
       className={`bg-gray-100 transition-all duration-500 ${showSidebar ? "pl-0 md:pl-[270px]" : "pl-0"
@@ -177,10 +148,10 @@ const Home = ({ authorization, showSidebar }) => {
     >
       <div className="p-7">
         {/* Header Section */}
-        <div className="flex flex-col md:flex-row gap-[12px] items-center justify-between mb-5">
+        {/* <div className="flex flex-col md:flex-row gap-[12px] items-center justify-between mb-5">
           <h1 className="text-[25px] font-[500]">Payment Management User Side</h1>
           <div className="flex items-center space-x-2">
-            {/* <div className="flex space-x-2 text-[12px]">
+            <div className="flex space-x-2 text-[12px]">
               <button
                 onClick={() => handleFilterClick("all")}
                 className={`$${activeFilter === "all"
@@ -217,10 +188,10 @@ const Home = ({ authorization, showSidebar }) => {
               >
                 30 DAYS
               </button>
-            </div> */}
+            </div>
 
           </div>
-        </div>
+        </div> */}
 
         {/* Boxes Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-7 text-nowrap">
@@ -316,15 +287,17 @@ const Home = ({ authorization, showSidebar }) => {
                 {/* Date Range Picker */}
                 <Space direction="vertical" size={10}>
                   <RangePicker
-                    value={dateRange}
+                    value={dateRange2}
                     onChange={(dates) => {
                       if (!dates) {
                         resetFilters();
                       } else {
-                        setDateRange(dates);
-                        setActiveFilter("custom");
                         const [startDate, endDate] = dates;
-                        fetchAllData(currentPage, startDate?.toISOString(), endDate?.toISOString());
+                        const start = formatDate(startDate);
+                        const end = formatDate(endDate);
+                        setDateRange(() => [start, end])
+                        setDateRange2(() => [startDate, endDate])
+                        fetchAllData(1, start, end);
                       }
                     }}
                     className="bg-gray-100"
@@ -445,8 +418,9 @@ const Home = ({ authorization, showSidebar }) => {
               total={totalPages} // Calculate total items dynamically
               current={currentPage}
               onChange={(page) => {
+                const [startDate, endDate] = dateRange;
                 setCurrentPage(page);
-                fetchAllData(page);
+                fetchAllData(page, startDate, endDate);
               }}
               className="custom-pagination"
             />
