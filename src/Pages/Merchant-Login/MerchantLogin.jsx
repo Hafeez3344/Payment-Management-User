@@ -38,7 +38,7 @@ const MerchantLogin = ({ authorization, setAuthorization }) => {
     try {
       setLoginLoader(true);
       const response = await fn_loginUserApi(values);
-      console.log("l=ogi==nn response ===> ",response);
+      console.log("l=ogi==nn response ===> ", response);
       if (response?.status) {
         // Store userId in cookies if available
         if (response?.data?.data?._id) {
@@ -142,6 +142,17 @@ const MerchantLogin = ({ authorization, setAuthorization }) => {
           }}
           onFinish={onFinish}
         >
+          <div style={{ marginBottom: 16, textAlign: "center" }}>
+            <span>
+              Do not have an account?{" "}
+              <span
+                style={{ color: "#1890ff", cursor: "pointer", fontWeight: 500 }}
+                onClick={() => navigate("/Merchant-SignUp")}
+              >
+                Sign Up
+              </span>
+            </span>
+          </div>
           <Form.Item
             name="email"
             rules={[

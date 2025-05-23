@@ -6,6 +6,30 @@ export const BACKEND_URL = "http://46.202.166.64:8080";
 // export const BACKEND_URL = "https://payment-management-backend";
 
 
+// ------------------------------------- User Sign up api ------------------------------------
+export const fn_signUpUserApi = async (data) => {
+    try {
+        const response = await axios.post(`${BACKEND_URL}/user/create`, data);
+        if (response?.status === 200) {
+            let message;
+            if (response?.data?.type === "merchant") {
+                message = "Merchant Signed Up successfully";
+            } else {
+                message = "Sign up successfull";
+            }
+            return { 
+                status: true, 
+                message: message,
+                data: response?.data
+            };
+        }
+    } catch (error) {
+        if (error?.response?.status === 400) {
+            return { status: false, message: error?.response?.data?.message };
+        }
+        return { status: false, message: "Network Error" };
+    }
+};
 
 // ------------------------------------- User Login api ------------------------------------
 export const fn_loginUserApi = async (data) => {
