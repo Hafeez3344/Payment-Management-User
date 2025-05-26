@@ -3,30 +3,27 @@ import Cookies from "js-cookie";
 import { useNavigate } from "react-router-dom";
 import React, { useEffect, useState } from "react";
 import { Button, DatePicker, Space, Modal, Input, message, Form, Select, Pagination, Upload } from "antd";
-
 import BACKEND_URL, { fn_createPaymentApi, fn_getUserPaymentApi } from "../../api/api";
-
 import { FaIndianRupeeSign } from "react-icons/fa6";
 import { FaCheckCircle, FaHourglassHalf, FaTimesCircle, FaSpinner } from "react-icons/fa";
 
 const Home = ({ authorization, showSidebar }) => {
 
   const navigate = useNavigate();
+  const [form] = Form.useForm();
   const { RangePicker } = DatePicker;
   const [error, setError] = useState("");
+  const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(true);
+  const [totalPages, setTotalPages] = useState(1);
   const containerHeight = window.innerHeight - 120;
+  const [currentPage, setCurrentPage] = useState(1);
+  const [summaryData, setSummaryData] = useState({});
   const [activeFilter, setActiveFilter] = useState("all");
   const [dateRange, setDateRange] = useState([null, null]);
   const [dateRange2, setDateRange2] = useState([null, null]);
-
   const [recentTransactions, setRecentTransactions] = useState([]);
   const [createPaymentModalOpen, setCreatePaymentModalOpen] = useState(false);
-  const [form] = Form.useForm();
-  const [currentPage, setCurrentPage] = useState(1);
-
-  const [totalPages, setTotalPages] = useState(1);
-  const [summaryData, setSummaryData] = useState({});
 
   useEffect(() => {
     fn_getSummary();
@@ -40,10 +37,10 @@ const Home = ({ authorization, showSidebar }) => {
     fetchAllData(1, null, null);
   }, [authorization, navigate]);
 
-  const fetchAllData = async (page, startDate = null, endDate = null) => {
+  const fetchAllData = async (page, startDate = null, endDate = null, statusParam = status) => {
     try {
       setLoading(true);
-      const response = await fn_getUserPaymentApi(page, startDate, endDate);
+      const response = await fn_getUserPaymentApi(page, startDate, endDate, statusParam);
       if (response?.status && response?.data) {
         const payments = Array.isArray(response.data) ? response.data : response.data.data || response.data.payments || [];
         const mapped = payments.map(payment => ({
@@ -162,6 +159,13 @@ const Home = ({ authorization, showSidebar }) => {
     timeZone: 'UTC'       // Ensure UTC time
   };
 
+  const handleStatusChange = (value) => {
+    setStatus(value);
+    setCurrentPage(1);
+    const [startDate, endDate] = dateRange;
+    fetchAllData(1, startDate, endDate, value);
+  };
+
   return (
     <div
       className={`bg-gray-100 transition-all duration-500 ${showSidebar ? "pl-0 md:pl-[270px]" : "pl-0"
@@ -264,11 +268,8 @@ const Home = ({ authorization, showSidebar }) => {
                   <Select
                     className="w-32"
                     placeholder="Status"
-                    // value={merchant}
-                    onChange={(value) => {
-                      // setMerchant(value);
-                      setCurrentPage(1);
-                    }}
+                    value={status}
+                    onChange={handleStatusChange}
                     options={[
                       {
                         value: "",
@@ -419,7 +420,7 @@ const Home = ({ authorization, showSidebar }) => {
               onChange={(page) => {
                 const [startDate, endDate] = dateRange;
                 setCurrentPage(page);
-                fetchAllData(page, startDate, endDate);
+                fetchAllData(page, startDate, endDate, status);
               }}
               className="custom-pagination"
             />

@@ -2,7 +2,7 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import moment from "moment/moment";
 
-export const BACKEND_URL = "http://46.202.166.64:7000";
+export const BACKEND_URL = "http://46.202.166.64:8080";
 // export const BACKEND_URL = "https://payment-management-backend";
 
 
@@ -75,38 +75,37 @@ export const fn_createPaymentApi = async (data) => {
 }
 
 // -------------------------------- get User  Payment api----------------------------------------
-export const fn_getUserPaymentApi = async (page, startDate, endDate) => {
-    try {
-        console.log("startDate", startDate);
-        console.log("endDate", endDate);
-        const userId = Cookies.get("userId");
-        const response = await axios.get(`${BACKEND_URL}/payment/get/${userId}?page=${page}${(startDate && endDate) ? `&startDate=${startDate}&endDate=${endDate}` : ''}`);
-        return {
-            status: true,
-            message: "Payment fetched successfully",
-            data: response.data || {}
-        };
-    } catch (error) {
-        return { status: false, message: "Network Error" };
-    }
-}
-
-
-//-------------------get all status search api----------------------    
-export const fn_getAllStatusSearchApi = async (status) => {
+export const fn_getUserPaymentApi = async (page = 1, startDate, endDate, status = "") => {
     try {
         const userId = Cookies.get("userId");
-        const response = await axios.get(`${BACKEND_URL}/payment/userFilteredPayment/${userId}?status=${status}`);
+        const params = new URLSearchParams();
+        params.append("page", page);
+        if (startDate && endDate) {
+            params.append("startDate", startDate);
+            params.append("endDate", endDate);
+        }
+        if (status) {
+            params.append("status", status);
+        }
+        const url = `${BACKEND_URL}/payment/get/${userId}?${params.toString()}`;
+        const response = await axios.get(url);
         if (response?.status === 200) {
-            return response.data;
+            return {
+                status: true,
+                message: "Payment fetched successfully",
+                data: response.data || {}
+            };
         }
     } catch (error) {
         if (error?.response?.status === 400) {
             return { status: false, message: error?.response?.data?.message };
         }
-        return { status: false, message: "Network Error" };
+        return { 
+            status: false, 
+            message: error.response?.data?.message || "Network Error" 
+        };
     }
-};
+}
 
 
 
