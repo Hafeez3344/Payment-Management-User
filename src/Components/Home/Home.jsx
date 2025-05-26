@@ -2,7 +2,7 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import { useNavigate } from "react-router-dom";
 import React, { useEffect, useState } from "react";
-import { Button, DatePicker, Space, Modal, Input, message, Form, Select, Pagination } from "antd";
+import { Button, DatePicker, Space, Modal, Input, message, Form, Select, Pagination, Upload } from "antd";
 
 import BACKEND_URL, { fn_createPaymentApi, fn_getUserPaymentApi } from "../../api/api";
 
@@ -95,20 +95,29 @@ const Home = ({ authorization, showSidebar }) => {
     try {
       setLoading(true);
       const userId = Cookies.get("userId");
-      const { type, ...rest } = values;
-      // For UPI, remove bankName, accountNumber, ifsc if present
-      let payload = {
-        ...rest,
-        status: "Pending",
-        transactionType: type,
-        userId,
-      };
-      if (type === "upi") {
-        delete payload.bankName;
-        delete payload.accountNumber;
-        delete payload.ifsc;
+      const { type, image, ...rest } = values;
+      
+      const formData = new FormData();
+      
+      // Append image if it exists
+      if (image && image.fileList && image.fileList[0]) {
+        formData.append('image', image.fileList[0].originFileObj);
       }
-      const response = await fn_createPaymentApi(payload);
+      
+      // Append other form data
+      formData.append('status', 'Pending');
+      formData.append('transactionType', type);
+      formData.append('userId', userId);
+      
+      // Append rest of the values
+      Object.keys(rest).forEach(key => {
+        if (type === 'upi' && ['bankName', 'accountNumber', 'ifsc'].includes(key)) {
+          return; // Skip these fields for UPI
+        }
+        formData.append(key, rest[key]);
+      });
+      
+      const response = await fn_createPaymentApi(formData);
       if (response.status) {
         message.success("Payment created successfully");
         closeCreatePaymentModal();
@@ -119,6 +128,7 @@ const Home = ({ authorization, showSidebar }) => {
         message.error(response.message || "Failed to create payment");
       }
     } catch (err) {
+      console.error("Error creating payment:", err);
       message.error("Failed to create payment");
     } finally {
       setLoading(false);
@@ -249,6 +259,29 @@ const Home = ({ authorization, showSidebar }) => {
                 All Payments
               </p>
               <div className="flex gap-[10px]">
+                 {/* Search by status - moved here */}
+                 <div className="ml-0">
+                  <Select
+                    className="w-32"
+                    placeholder="Status"
+                    // value={merchant}
+                    onChange={(value) => {
+                      // setMerchant(value);
+                      setCurrentPage(1);
+                    }}
+                    options={[
+                      {
+                        value: "",
+                        label: (
+                          <span className="text-gray-400">All Status</span>
+                        ),
+                      },
+                      { value: "Approved", label: "Approved" },
+                      { value: "Pending", label: "Pending" },
+                      { value: "Decline", label: "Declined" },
+                    ]}
+                  />
+                </div>
                 {/* Date Range Picker */}
                 <Space direction="vertical" size={10}>
                   <RangePicker
@@ -463,6 +496,23 @@ const Home = ({ authorization, showSidebar }) => {
                       >
                         <Input placeholder="Enter IFSC code" />
                       </Form.Item>
+                      
+                      <Form.Item
+                        label="Upload Proof Image"
+                        name="image"
+                        rules={[{ required: true, message: 'Please upload a proof image' }]}
+                      >
+                        <Upload
+                          accept="image/*"
+                          listType="picture-card"
+                          maxCount={1}
+                          beforeUpload={() => false}
+                        >
+                          <div>
+                            <div style={{ marginTop: 8 }}>Upload</div>
+                          </div>
+                        </Upload>
+                      </Form.Item>
                     </>
                   );
                 }
@@ -484,6 +534,22 @@ const Home = ({ authorization, showSidebar }) => {
                         rules={[{ required: true, message: "Please enter UPI ID" }]}
                       >
                         <Input placeholder="Enter UPI ID" />
+                      </Form.Item>
+                      <Form.Item
+                        label="Upload Proof Image"
+                        name="image"
+                        rules={[{ required: true, message: 'Please upload a proof image' }]}
+                      >
+                        <Upload
+                          accept="image/*"
+                          listType="picture-card"
+                          maxCount={1}
+                          beforeUpload={() => false}
+                        >
+                          <div>
+                            <div style={{ marginTop: 8 }}>Upload</div>
+                          </div>
+                        </Upload>
                       </Form.Item>
                     </>
                   );
@@ -508,3 +574,8 @@ const Home = ({ authorization, showSidebar }) => {
 };
 
 export default Home;
+
+
+
+
+// message : "Invalid IFSC code"
