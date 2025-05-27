@@ -2,8 +2,8 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import { useNavigate } from "react-router-dom";
 import React, { useEffect, useState } from "react";
-import { Button, DatePicker, Space, Modal, Input, message, Form, Select, Pagination, Upload } from "antd";
-import BACKEND_URL, { fn_createPaymentApi, fn_getUserPaymentApi } from "../../api/api";
+import { Button, DatePicker, Space, Modal, Input, message, Form, Select, Pagination, Upload, Spin } from "antd";
+import BACKEND_URL, { fn_createPaymentApi, fn_getUserPaymentApi, fn_getIfscValidationApi } from "../../api/api";
 import { FaIndianRupeeSign } from "react-icons/fa6";
 import { FaCheckCircle, FaHourglassHalf, FaTimesCircle, FaSpinner } from "react-icons/fa";
 
@@ -24,6 +24,10 @@ const Home = ({ authorization, showSidebar }) => {
   const [dateRange2, setDateRange2] = useState([null, null]);
   const [recentTransactions, setRecentTransactions] = useState([]);
   const [createPaymentModalOpen, setCreatePaymentModalOpen] = useState(false);
+  const [ifscValidation, setIfscValidation] = useState(null);
+  const [ifscError, setIfscError] = useState("");
+  const [ifscTouched, setIfscTouched] = useState(false);
+  const [ifscLoading, setIfscLoading] = useState(false);
 
   useEffect(() => {
     fn_getSummary();
@@ -86,9 +90,52 @@ const Home = ({ authorization, showSidebar }) => {
   const closeCreatePaymentModal = () => {
     setCreatePaymentModalOpen(false);
     form.resetFields();
+    setIfscValidation(null);
+    setIfscError("");
+    setIfscTouched(false);
+    setIfscLoading(false);
+  };
+
+  const handleIfscChange = async (e) => {
+    const value = e.target.value.toUpperCase();
+    form.setFieldsValue({ ifsc: value });
+    setIfscTouched(true);
+    if (value.length === 11) {
+      setIfscLoading(true);
+      setIfscValidation(null);
+      setIfscError("");
+      const result = await fn_getIfscValidationApi(value);
+      setIfscLoading(false);
+      if (result && result.status !== false) {
+        setIfscValidation(result.data || result);
+        setIfscError("");
+      } else {
+        setIfscValidation(null);
+        setIfscError(result?.message || "");
+      }
+    } else {
+      setIfscValidation(null);
+      setIfscError("");
+      setIfscLoading(false);
+    }
+  };
+
+  const handleTypeChange = () => {
+    setIfscValidation(null);
+    setIfscError("");
+    setIfscTouched(false);
+    setIfscLoading(false);
+    form.setFieldsValue({ ifsc: undefined });
   };
 
   const handleCreatePayment = async (values) => {
+    const type = values.type;
+    if (type === 'bank') {
+      if (!ifscValidation || ifscError) {
+        message.error(ifscError || 'Please enter a valid IFSC code.');
+        return;
+      }
+    }
     try {
       setLoading(true);
       const userId = Cookies.get("userId");
@@ -164,6 +211,37 @@ const Home = ({ authorization, showSidebar }) => {
     setCurrentPage(1);
     const [startDate, endDate] = dateRange;
     fetchAllData(1, startDate, endDate, value);
+  };
+
+  const isFormValid = () => {
+    const type = form.getFieldValue("type");
+    const fields = form.getFieldsValue();
+    const hasErrors = form.getFieldsError().some(({ errors }) => errors.length);
+    // Check image field for both types
+    const hasImage = fields.image && fields.image.fileList && fields.image.fileList.length > 0;
+    if (type === "bank") {
+      return (
+        fields.amount &&
+        fields.accountHolder &&
+        fields.bankName &&
+        fields.accountNumber &&
+        fields.ifsc &&
+        hasImage &&
+        !hasErrors &&
+        ifscValidation &&
+        !ifscError &&
+        !ifscLoading
+      );
+    } else if (type === "upi") {
+      return (
+        fields.amount &&
+        fields.accountHolder &&
+        fields.upi &&
+        hasImage &&
+        !hasErrors
+      );
+    }
+    return false;
   };
 
   return (
@@ -455,7 +533,7 @@ const Home = ({ authorization, showSidebar }) => {
               name="type"
               rules={[{ required: true, message: "Please select type" }]}
             >
-              <Select placeholder="Select type">
+              <Select placeholder="Select type" onChange={handleTypeChange}>
                 <Select.Option value="bank">Bank</Select.Option>
                 <Select.Option value="upi">UPI</Select.Option>
               </Select>
@@ -495,9 +573,25 @@ const Home = ({ authorization, showSidebar }) => {
                         name="ifsc"
                         rules={[{ required: true, message: "Please enter IFSC code" }]}
                       >
-                        <Input placeholder="Enter IFSC code" />
+                        <Input
+                          placeholder="Enter IFSC code"
+                          maxLength={11}
+                          style={{ textTransform: "uppercase" }}
+                          onChange={handleIfscChange}
+                          suffix={ifscLoading ? <Spin size="small" /> : null}
+                        />
                       </Form.Item>
-                      
+                      {/* IFSC validation feedback */}
+                      {ifscError && ifscTouched && getFieldValue("ifsc") && getFieldValue("ifsc").length === 11 && (
+                        <div style={{ color: "red", marginBottom: 8 }}>{ifscError}</div>
+                      )}
+                      {ifscValidation && (
+                        <div style={{ background: "#f6ffed", border: "1px solid #b7eb8f", padding: 8, borderRadius: 4, marginBottom: 8 }}>
+                          {Object.entries(ifscValidation).map(([key, value]) => (
+                            <div key={key}><b>{key}:</b> {String(value)}</div>
+                          ))}
+                        </div>
+                      )}
                       <Form.Item
                         label="Upload Proof Image"
                         name="image"
@@ -558,14 +652,19 @@ const Home = ({ authorization, showSidebar }) => {
                 return null;
               }}
             </Form.Item>
-            <Form.Item>
-              <Button
-                type="primary"
-                htmlType="submit"
-                className="bg-[#0864E8] hover:bg-[#0056b3] text-white font-[500] border-none w-full"
-              >
-                Create Payment
-              </Button>
+            <Form.Item shouldUpdate={(prev, curr) => prev.type !== curr.type} noStyle>
+              {({ getFieldValue }) => {
+                const type = getFieldValue("type");
+                return (
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    className="bg-[#0864E8] hover:bg-[#0056b3] text-white font-[500] border-none w-full"
+                  >
+                    Create Payment
+                  </Button>
+                );
+              }}
             </Form.Item>
           </Form>
         </Modal>

@@ -2,8 +2,7 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import moment from "moment/moment";
 
-export const BACKEND_URL = "http://46.202.166.64:8080";
-// export const BACKEND_URL = "https://payment-management-backend";
+export const BACKEND_URL = "http://46.202.166.64:7000";
 
 
 // ------------------------------------- User Sign up api ------------------------------------
@@ -63,7 +62,7 @@ export const fn_createPaymentApi = async (data) => {
         return {
             status: true,
             message: "Payment created successfully",
-            data: response.data.m
+            data: response.data
         };
     } catch (error) {
         // Return the specific error message from backend if available
@@ -104,6 +103,23 @@ export const fn_getUserPaymentApi = async (page = 1, startDate, endDate, status 
             status: false, 
             message: error.response?.data?.message || "Network Error" 
         };
+    }
+}
+
+//-----------------Get IFSC Validation API------------------------------
+export const fn_getIfscValidationApi = async (ifsc) => {
+    try {
+        const response = await axios.get(`${BACKEND_URL}/payment/validate?ifsc=${ifsc}`);
+        if (response?.status === 200) {
+            return response.data;
+        }
+    } catch (error) {
+        // Always show backend error message if available
+        const backendMessage = error?.response?.data?.message || error?.response?.message;
+        if (backendMessage) {
+            return { status: false, message: backendMessage };
+        }
+        return { status: false, message: "Network Error" };
     }
 }
 
