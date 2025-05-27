@@ -296,6 +296,7 @@ const Home = ({ authorization, showSidebar }) => {
 
           </div>
         </div> */}
+        <div className="flex flex-col md:flex-row gap-[12px] items-center justify-between mb-5"></div>
 
         {/* Boxes Section */}
         <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-3 xl:grid-cols-3 gap-4 mb-7 text-nowrap">
