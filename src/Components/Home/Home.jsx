@@ -244,6 +244,14 @@ const Home = ({ authorization, showSidebar }) => {
     return false;
   };
 
+  function toTitleCase(str) {
+  return str
+    .toLowerCase()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
   return (
     <div
       className={`bg-gray-100 transition-all duration-500 ${showSidebar ? "pl-0 md:pl-[270px]" : "pl-0"
@@ -588,9 +596,7 @@ const Home = ({ authorization, showSidebar }) => {
                       )}
                       {ifscValidation && (
                         <div style={{ background: "#f6ffed", border: "1px solid #b7eb8f", padding: 8, borderRadius: 4, marginBottom: 8 }}>
-                          {Object.entries(ifscValidation).map(([key, value]) => (
-                            <div key={key}><b>{key}:</b> {String(value)}</div>
-                          ))}
+                          <span> <span className="font-semibold"> BRANCH: </span> {toTitleCase(ifscValidation)}</span>
                         </div>
                       )}
                       <Form.Item
